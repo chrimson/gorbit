@@ -58,6 +58,10 @@ func main() {
 	// Run the application
 	a.Run(func(renderer *renderer.Renderer, deltaTime time.Duration) {
 		a.Gls().Clear(gls.DEPTH_BUFFER_BIT | gls.STENCIL_BUFFER_BIT | gls.COLOR_BUFFER_BIT)
+
+		delta := float32(deltaTime.Seconds()) * 2 * math32.Pi / 5
+		mesh.RotateX(delta)
+
 		renderer.Render(scene, cam)
 	})
 }
