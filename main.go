@@ -9,6 +9,7 @@ import (
 	"github.com/g3n/engine/geometry"
 	"github.com/g3n/engine/gls"
 	"github.com/g3n/engine/graphic"
+	"github.com/g3n/engine/texture"
 
 	"github.com/g3n/engine/light"
 	"github.com/g3n/engine/material"
@@ -19,15 +20,15 @@ import (
 )
 
 func main() {
-
 	// Create application and scene
 	a := app.App()
-	scene := core.NewNode()
+	systemOrbits := core.NewNode()
+	earthOrbit := core.NewNode()
 
 	// Create perspective camera
 	cam := camera.New(1)
-	cam.SetPosition(0, 0, 3)
-	scene.Add(cam)
+	cam.SetPosition(0, 0, 10)
+	systemOrbits.Add(cam)
 
 	// Set up orbit control for the camera
 	camera.NewOrbitControl(cam)
@@ -43,25 +44,36 @@ func main() {
 	a.Subscribe(window.OnWindowSize, onResize)
 	onResize("", nil)
 
-	// Create a blue torus and add it to the scene
-	geom := geometry.NewTorus(1, .4, 12, 32, math32.Pi*2)
-	mat := material.NewStandard(math32.NewColor("DarkBlue"))
-	mesh := graphic.NewMesh(geom, mat)
-	scene.Add(mesh)
+	earthShape := geometry.NewSphere(0.5, 360, 360)
 
-	// Create and add lights to the scene
-	scene.Add(light.NewAmbient(&math32.Color{R: 1.0, G: 1.0, B: 1.0}, 0.8))
-	pointLight := light.NewPoint(&math32.Color{R: 1, G: 1, B: 1}, 5.0)
-	pointLight.SetPosition(1, 0, 2)
-	scene.Add(pointLight)
+	earthImage := func(path string) *texture.Texture2D {
+		t, _ := texture.NewTexture2DFromImage(path)
+		t.SetFlipY(false)
+		return t
+	}
+	earthTexture := material.NewStandard(&math32.Color{R: 1.0, G: 1.0, B: 1.0})
+	earthTexture.SetShininess(1)
+	earthTexture.AddTexture(earthImage("earth_clouds_big.jpg"))
+
+	earth := graphic.NewMesh(earthShape, earthTexture)
+	earth.TranslateX(5.0)
+	earth.RotateZ(0.4084)
+	earthOrbit.Add(earth)
+	systemOrbits.Add(earthOrbit)
+
+	systemOrbits.Add(light.NewAmbient(&math32.Color{R: 1.0, G: 1.0, B: 1.0}, 0.2))
+	sunLight := light.NewPoint(&math32.Color{R: 1, G: 1, B: 1}, 20.0)
+	sunLight.SetPosition(0, 0, 0)
+	systemOrbits.Add(sunLight)
 
 	// Run the application
 	a.Run(func(renderer *renderer.Renderer, deltaTime time.Duration) {
 		a.Gls().Clear(gls.DEPTH_BUFFER_BIT | gls.STENCIL_BUFFER_BIT | gls.COLOR_BUFFER_BIT)
 
-		delta := float32(deltaTime.Seconds()) * 2 * math32.Pi / 5
-		mesh.RotateX(delta)
+		delta := float32(deltaTime.Seconds()) * 2 * math32.Pi / 20
+		earthOrbit.RotateY(delta)
+		earth.RotateY(delta * 10)
 
-		renderer.Render(scene, cam)
+		renderer.Render(systemOrbits, cam)
 	})
 }
