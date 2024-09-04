@@ -54,11 +54,13 @@ func main() {
 	earthTexture := material.NewStandard(&math32.Color{R: 1.0, G: 1.0, B: 1.0})
 	earthTexture.SetShininess(10)
 	earthTexture.AddTexture(earthImage("earth_clouds_big.jpg"))
-	earthObj := graphic.NewMesh(earthShape, earthTexture)
-	earthObj.TranslateX(10.0)
-	earthObj.RotateZ(23.4 * math32.Pi / 180)
+	earthTilt := graphic.NewMesh(earthShape, earthTexture)
+	earthTilt.RotateZ(23.4 * math32.Pi / 180)
+	earthDistance := core.NewNode()
+	earthDistance.Add(earthTilt)
+	earthDistance.TranslateX(10.0)
 	earth := core.NewNode()
-	earth.Add(earthObj)
+	earth.Add(earthDistance)
 	system.Add(earth)
 
 	lights := light.NewPoint(&math32.Color{R: 1, G: 1, B: 1}, 20.0)
@@ -68,9 +70,10 @@ func main() {
 	a.Run(func(renderer *renderer.Renderer, deltaTime time.Duration) {
 		a.Gls().Clear(gls.DEPTH_BUFFER_BIT | gls.STENCIL_BUFFER_BIT | gls.COLOR_BUFFER_BIT)
 
-		delta := float32(deltaTime.Seconds()) * 2 * math32.Pi / 365
+		delta := float32(deltaTime.Seconds()) * 2 * math32.Pi / 30
 		earth.RotateY(delta)
-		earthObj.RotateY(-delta * 365)
+		earthDistance.RotateY(-delta)
+		earthTilt.RotateY(delta * 30)
 
 		renderer.Render(system, cam)
 	})
