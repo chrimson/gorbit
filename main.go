@@ -56,6 +56,18 @@ func main() {
 	earthTexture.AddTexture(earthImage("earth_clouds_big.jpg"))
 	earthTilt := graphic.NewMesh(earthShape, earthTexture)
 	earthTilt.RotateZ(23.4 * math32.Pi / 180)
+
+	earthAxisGeometry := geometry.NewGeometry()
+	earthAxisVertices := math32.NewArrayF32(0, 0)
+	earthAxisVertices.Append(
+		0.0, 1.0, 0.0,
+		0.0, -1.0, 0.0,
+	)
+	earthAxisGeometry.AddVBO(gls.NewVBO(earthAxisVertices).AddAttrib(gls.VertexPosition))
+	earthAxisMaterial := material.NewStandard(&math32.Color{R: 1.0, G: 1.0, B: 1.0})
+	earthAxis := graphic.NewLines(earthAxisGeometry, earthAxisMaterial)
+	earthTilt.Add(earthAxis)
+
 	earthDistance := core.NewNode()
 	earthDistance.Add(earthTilt)
 	earthDistance.TranslateX(10.0)
