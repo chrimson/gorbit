@@ -68,7 +68,23 @@ func main() {
 	earthAxis := graphic.NewLines(earthAxisGeometry, earthAxisMaterial)
 	earthTilt.Add(earthAxis)
 
+	moonShape := geometry.NewSphere(0.15, 360, 360)
+	moonImage := func(path string) *texture.Texture2D {
+		t, _ := texture.NewTexture2DFromImage(path)
+		t.SetFlipY(false)
+		return t
+	}
+	moonTexture := material.NewStandard(&math32.Color{R: 1.0, G: 1.0, B: 1.0})
+	moonTexture.SetShininess(10)
+	moonTexture.AddTexture(moonImage("moon.jpg"))
+
+	moonDistance := graphic.NewMesh(moonShape, moonTexture)
+	moonDistance.TranslateX(1.5)
+	moon := core.NewNode()
+	moon.Add(moonDistance)
+
 	earthDistance := core.NewNode()
+	earthDistance.Add(moon)
 	earthDistance.Add(earthTilt)
 	earthDistance.TranslateX(10.0)
 	earth := core.NewNode()
@@ -97,10 +113,11 @@ func main() {
 	a.Run(func(renderer *renderer.Renderer, deltaTime time.Duration) {
 		a.Gls().Clear(gls.DEPTH_BUFFER_BIT | gls.STENCIL_BUFFER_BIT | gls.COLOR_BUFFER_BIT)
 
-		delta := float32(deltaTime.Seconds()) * 2 * math32.Pi / 30
+		delta := float32(deltaTime.Seconds()) * 2 * math32.Pi / 365
 		earth.RotateY(delta)
 		earthDistance.RotateY(-delta)
-		earthTilt.RotateY(delta * 30)
+		earthTilt.RotateY(delta * 365)
+		moon.RotateY(delta * 365 / 27)
 
 		renderer.Render(system, cam)
 	})
