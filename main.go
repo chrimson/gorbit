@@ -77,11 +77,29 @@ func main() {
 	moonTexture := material.NewStandard(&math32.Color{R: 1.0, G: 1.0, B: 1.0})
 	moonTexture.SetShininess(10)
 	moonTexture.AddTexture(moonImage("moon.jpg"))
-
 	moonDistance := graphic.NewMesh(moonShape, moonTexture)
 	moonDistance.TranslateX(1.5)
+
+	moonPathCircle := geometry.NewGeometry()
+	moonPathPoints := math32.NewArrayF32(0, 0)
+	for x := float32(-1.0); x < 1.0; x = x + 0.01 {
+		z := math32.Sqrt(1.0 - math32.Pow(x, 2))
+		moonPathPoints.Append(1.5*x, 0.0, 1.5*z)
+	}
+	for x := float32(1.0); x > -1.0; x = x - 0.01 {
+		z := math32.Sqrt(1.0 - math32.Pow(x, 2))
+		moonPathPoints.Append(1.5*x, 0.0, -1.5*z)
+	}
+	moonPathCircle.AddVBO(gls.NewVBO(moonPathPoints).AddAttrib(gls.VertexPosition))
+	moonPathMaterial := material.NewStandard(&math32.Color{R: 1.0, G: 1.0, B: 1.0})
+	moonPath := graphic.NewLineStrip(moonPathCircle, moonPathMaterial)
+
+	moonPlane := core.NewNode()
+	moonPlane.Add(moonDistance)
+	moonPlane.Add(moonPath)
+	moonPlane.RotateZ(5.14 * math32.Pi / 180)
 	moon := core.NewNode()
-	moon.Add(moonDistance)
+	moon.Add(moonPlane)
 
 	earthDistance := core.NewNode()
 	earthDistance.Add(moon)
@@ -117,7 +135,7 @@ func main() {
 		earth.RotateY(delta)
 		earthDistance.RotateY(-delta)
 		earthTilt.RotateY(delta * 365.0)
-		moon.RotateY(delta * 365.0 / 27.3)
+		moonPlane.RotateY(delta * 365.0 / 27.3)
 
 		renderer.Render(system, cam)
 	})
