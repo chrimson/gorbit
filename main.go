@@ -75,6 +75,21 @@ func main() {
 	earth.Add(earthDistance)
 	system.Add(earth)
 
+	earthPathCircle := geometry.NewGeometry()
+	earthPathPoints := math32.NewArrayF32(0, 0)
+	for x := float32(-1.0); x < 1.0; x = x + 0.01 {
+		z := math32.Sqrt(1.0 - math32.Pow(x, 2))
+		earthPathPoints.Append(10.0*x, 0.0, 10.0*z)
+	}
+	for x := float32(1.0); x > -1.0; x = x - 0.01 {
+		z := math32.Sqrt(1.0 - math32.Pow(x, 2))
+		earthPathPoints.Append(10.0*x, 0.0, -10.0*z)
+	}
+	earthPathCircle.AddVBO(gls.NewVBO(earthPathPoints).AddAttrib(gls.VertexPosition))
+	earthPathMaterial := material.NewStandard(&math32.Color{R: 1.0, G: 1.0, B: 1.0})
+	earthPath := graphic.NewLineStrip(earthPathCircle, earthPathMaterial)
+	system.Add(earthPath)
+
 	lights := light.NewPoint(&math32.Color{R: 1, G: 1, B: 1}, 20.0)
 	lights.SetPosition(0, 0, 0)
 	system.Add(lights)
