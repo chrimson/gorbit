@@ -39,34 +39,31 @@ func main() {
 	a.Subscribe(window.OnWindowSize, onResize)
 	onResize("", nil)
 
-	dateTimeControl := gui.NewHScrollBar(750, 20)
+	dateTimeControl := gui.NewHScrollBar(700, 20)
 	dateTimeControl.SetPosition(10, 10)
-	dateTimeLabel := gui.NewLabel("Pos:")
-	dateTimeLabel.SetPosition(dateTimeControl.Position().X+dateTimeControl.Width()+10, dateTimeControl.Position().Y)
+	test := gui.NewLabel("Pos:")
+	test.SetPosition(dateTimeControl.Position().X+dateTimeControl.Width()+10, dateTimeControl.Position().Y)
 	dateTimeControl.Subscribe(gui.OnChange, func(evname string, ev interface{}) {
-		dateTimeLabel.SetText(fmt.Sprintf("Pos:%1.2f", dateTimeControl.Value()))
+		test.SetText(fmt.Sprintf("Pos: %1.2f", dateTimeControl.Value()))
 	})
 	dateTimeControl.SetColor(&math32.Color{R: 0.2, G: 0.2, B: 0.2})
 	system.Add(dateTimeControl)
-	system.Add(dateTimeLabel)
+	system.Add(test)
 
-	speedControl := gui.NewHSlider(750, 20)
+	speedControl := gui.NewHSlider(700, 20)
 	speedControl.SetPosition(10, 40)
-	speedControl.SetValue(0.1)
-	// speedControl.SetText(fmt.Sprintf("%1.2f", speedControl.Value()))
-	speedControl.Subscribe(gui.OnChange, func(evname string, ev interface{}) {
-		// a.Log().Info("Slider 1 OnChange: %v", s1.Value())
-		// speedControl.SetText(fmt.Sprintf("%1.2f", speedControl.Value()))
-	})
+	speedControl.SetValue(0.01)
+	speedControl.Subscribe(gui.OnChange, func(evname string, ev interface{}) {})
 	system.Add(speedControl)
 
 	sunShape := geometry.NewSphere(2, 360, 360)
-	sunTexture := material.NewStandard(&math32.Color{R: 1.0, G: 0.9, B: 0.7})
-	sunTexture.SetShininess(5)
-	sunObj := graphic.NewMesh(sunShape, sunTexture)
-	sun := core.NewNode()
-	sun.Add(sunObj)
+	sunTexture := material.NewStandard(&math32.Color{R: 1.0, G: 0.8, B: 0.5})
+	sunTexture.SetEmissiveColor(&math32.Color{R: 1.0, G: 0.8, B: 0.5})
+	sunLight := light.NewPoint(&math32.Color{R: 1, G: 1, B: 1}, 40.0)
+	sunLight.SetPosition(0.0, 0.0, 0.0)
+	sun := graphic.NewMesh(sunShape, sunTexture)
 	sun.Add(light.NewAmbient(&math32.Color{R: 1.0, G: 1.0, B: 1.0}, 0.2))
+	sun.Add(sunLight)
 	system.Add(sun)
 
 	earthShape := geometry.NewSphere(0.5, 360, 360)
@@ -91,6 +88,28 @@ func main() {
 	earthAxisMaterial := material.NewStandard(&math32.Color{R: 1.0, G: 1.0, B: 1.0})
 	earthAxis := graphic.NewLines(earthAxisGeometry, earthAxisMaterial)
 	earthTilt.Add(earthAxis)
+
+	earthDistance := core.NewNode()
+	earthDistance.Add(moon)
+	earthDistance.Add(earthTilt)
+	earthDistance.TranslateX(10.0)
+	earth := core.NewNode()
+	earth.Add(earthDistance)
+	system.Add(earth)
+	earthPathCircle := geometry.NewGeometry()
+	earthPathPoints := math32.NewArrayF32(0, 0)
+	for x := float32(-1.0); x < 1.0; x = x + 0.01 {
+		z := math32.Sqrt(1.0 - math32.Pow(x, 2))
+		earthPathPoints.Append(10.0*x, 0.0, 10.0*z)
+	}
+	for x := float32(1.0); x > -1.0; x = x - 0.01 {
+		z := math32.Sqrt(1.0 - math32.Pow(x, 2))
+		earthPathPoints.Append(10.0*x, 0.0, -10.0*z)
+	}
+	earthPathCircle.AddVBO(gls.NewVBO(earthPathPoints).AddAttrib(gls.VertexPosition))
+	earthPathMaterial := material.NewStandard(&math32.Color{R: 1.0, G: 1.0, B: 1.0})
+	earthPath := graphic.NewLineStrip(earthPathCircle, earthPathMaterial)
+	system.Add(earthPath)
 
 	moonShape := geometry.NewSphere(0.15, 360, 360)
 	moonImage := func(path string) *texture.Texture2D {
@@ -117,7 +136,6 @@ func main() {
 	moonPathCircle.AddVBO(gls.NewVBO(moonPathPoints).AddAttrib(gls.VertexPosition))
 	moonPathMaterial := material.NewStandard(&math32.Color{R: 1.0, G: 1.0, B: 1.0})
 	moonPath := graphic.NewLineStrip(moonPathCircle, moonPathMaterial)
-
 	moonPlane := core.NewNode()
 	moonPlane.Add(moonDistance)
 	moonPlane.Add(moonPath)
@@ -125,32 +143,10 @@ func main() {
 	moon := core.NewNode()
 	moon.Add(moonPlane)
 
-	earthDistance := core.NewNode()
-	earthDistance.Add(moon)
-	earthDistance.Add(earthTilt)
-	earthDistance.TranslateX(10.0)
-	earth := core.NewNode()
-	earth.Add(earthDistance)
-	system.Add(earth)
-
-	earthPathCircle := geometry.NewGeometry()
-	earthPathPoints := math32.NewArrayF32(0, 0)
-	for x := float32(-1.0); x < 1.0; x = x + 0.01 {
-		z := math32.Sqrt(1.0 - math32.Pow(x, 2))
-		earthPathPoints.Append(10.0*x, 0.0, 10.0*z)
-	}
-	for x := float32(1.0); x > -1.0; x = x - 0.01 {
-		z := math32.Sqrt(1.0 - math32.Pow(x, 2))
-		earthPathPoints.Append(10.0*x, 0.0, -10.0*z)
-	}
-	earthPathCircle.AddVBO(gls.NewVBO(earthPathPoints).AddAttrib(gls.VertexPosition))
-	earthPathMaterial := material.NewStandard(&math32.Color{R: 1.0, G: 1.0, B: 1.0})
-	earthPath := graphic.NewLineStrip(earthPathCircle, earthPathMaterial)
-	system.Add(earthPath)
-
-	lights := light.NewPoint(&math32.Color{R: 1, G: 1, B: 1}, 40.0)
-	lights.SetPosition(4.0, 3.0, -2.0)
-	system.Add(lights)
+	runningPosition := gui.NewLabel("")
+	runningPosition.SetPosition(10, 70)
+	runningPosition.SetColor(&math32.Color{R: 1.0, G: 1.0, B: 1.0})
+	system.Add(runningPosition)
 
 	a.Run(func(renderer *renderer.Renderer, deltaTime time.Duration) {
 		a.Gls().Clear(gls.DEPTH_BUFFER_BIT | gls.STENCIL_BUFFER_BIT | gls.COLOR_BUFFER_BIT)
@@ -162,5 +158,7 @@ func main() {
 		moonPlane.RotateY(delta * 365.0 / 27.3)
 
 		renderer.Render(system, cam)
+
+		runningPosition.SetText(fmt.Sprint(earthDistance.Rotation().Y))
 	})
 }
