@@ -23,6 +23,7 @@ import (
 func main() {
 	a := app.App()
 	system := core.NewNode()
+	gui.Manager().Set(system)
 
 	cam := camera.New(1)
 	cam.SetPosition(0, 7, 15)
@@ -38,22 +39,34 @@ func main() {
 	a.Subscribe(window.OnWindowSize, onResize)
 	onResize("", nil)
 
-	s1 := gui.NewHSlider(400, 32)
-	s1.SetPosition(10, 10)
-	s1.SetValue(0.2)
-	s1.SetText(fmt.Sprintf("%1.2f", s1.Value()))
-	s1.Subscribe(gui.OnChange, func(evname string, ev interface{}) {
-		// a.Log().Info("Slider 1 OnChange: %v", s1.Value())
-		s1.SetText(fmt.Sprintf("%1.2f", s1.Value()))
+	dateTimeControl := gui.NewHScrollBar(750, 20)
+	dateTimeControl.SetPosition(10, 10)
+	dateTimeLabel := gui.NewLabel("Pos:")
+	dateTimeLabel.SetPosition(dateTimeControl.Position().X+dateTimeControl.Width()+10, dateTimeControl.Position().Y)
+	dateTimeControl.Subscribe(gui.OnChange, func(evname string, ev interface{}) {
+		dateTimeLabel.SetText(fmt.Sprintf("Pos:%1.2f", dateTimeControl.Value()))
 	})
-	system.Add(s1)
+	dateTimeControl.SetColor(&math32.Color{R: 0.2, G: 0.2, B: 0.2})
+	system.Add(dateTimeControl)
+	system.Add(dateTimeLabel)
+
+	speedControl := gui.NewHSlider(750, 20)
+	speedControl.SetPosition(10, 40)
+	speedControl.SetValue(0.1)
+	// speedControl.SetText(fmt.Sprintf("%1.2f", speedControl.Value()))
+	speedControl.Subscribe(gui.OnChange, func(evname string, ev interface{}) {
+		// a.Log().Info("Slider 1 OnChange: %v", s1.Value())
+		// speedControl.SetText(fmt.Sprintf("%1.2f", speedControl.Value()))
+	})
+	system.Add(speedControl)
 
 	sunShape := geometry.NewSphere(2, 360, 360)
-	sunColor := material.NewStandard(&math32.Color{R: 1.0, G: 0.9, B: 0.7})
-	sunObj := graphic.NewMesh(sunShape, sunColor)
+	sunTexture := material.NewStandard(&math32.Color{R: 1.0, G: 0.9, B: 0.7})
+	sunTexture.SetShininess(5)
+	sunObj := graphic.NewMesh(sunShape, sunTexture)
 	sun := core.NewNode()
 	sun.Add(sunObj)
-	sun.Add(light.NewAmbient(&math32.Color{R: 1.0, G: 1.0, B: 1.0}, 0.3))
+	sun.Add(light.NewAmbient(&math32.Color{R: 1.0, G: 1.0, B: 1.0}, 0.2))
 	system.Add(sun)
 
 	earthShape := geometry.NewSphere(0.5, 360, 360)
@@ -63,7 +76,7 @@ func main() {
 		return t
 	}
 	earthTexture := material.NewStandard(&math32.Color{R: 1.0, G: 1.0, B: 1.0})
-	earthTexture.SetShininess(10)
+	earthTexture.SetShininess(5)
 	earthTexture.AddTexture(earthImage("earth.jpg"))
 	earthTilt := graphic.NewMesh(earthShape, earthTexture)
 	earthTilt.RotateZ(23.4 * math32.Pi / 180)
@@ -86,7 +99,7 @@ func main() {
 		return t
 	}
 	moonTexture := material.NewStandard(&math32.Color{R: 1.0, G: 1.0, B: 1.0})
-	moonTexture.SetShininess(10)
+	moonTexture.SetShininess(5)
 	moonTexture.AddTexture(moonImage("moon.jpg"))
 	moonDistance := graphic.NewMesh(moonShape, moonTexture)
 	moonDistance.TranslateX(1.5)
@@ -135,14 +148,14 @@ func main() {
 	earthPath := graphic.NewLineStrip(earthPathCircle, earthPathMaterial)
 	system.Add(earthPath)
 
-	lights := light.NewPoint(&math32.Color{R: 1, G: 1, B: 1}, 30.0)
+	lights := light.NewPoint(&math32.Color{R: 1, G: 1, B: 1}, 40.0)
 	lights.SetPosition(4.0, 3.0, -2.0)
 	system.Add(lights)
 
 	a.Run(func(renderer *renderer.Renderer, deltaTime time.Duration) {
 		a.Gls().Clear(gls.DEPTH_BUFFER_BIT | gls.STENCIL_BUFFER_BIT | gls.COLOR_BUFFER_BIT)
 
-		delta := float32(deltaTime.Seconds()) * 2 * math32.Pi / 365.0
+		delta := 100 * speedControl.Value() * float32(deltaTime.Seconds()) * 2 * math32.Pi / 365.0
 		earth.RotateY(delta)
 		earthDistance.RotateY(-delta)
 		earthTilt.RotateY(delta * 365.0)
