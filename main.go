@@ -143,10 +143,20 @@ func main() {
 	moonPlane.RotateZ(5.14 * math32.Pi / 180)
 	moon.Add(moonPlane)
 
-	runningPosition := gui.NewLabel("")
-	runningPosition.SetPosition(10, 70)
-	runningPosition.SetColor(&math32.Color{R: 1.0, G: 1.0, B: 1.0})
-	system.Add(runningPosition)
+	// runningPositionX := gui.NewLabel("")
+	// runningPositionX.SetPosition(10, 70)
+	// runningPositionX.SetColor(&math32.Color{R: 1.0, G: 1.0, B: 1.0})
+	// system.Add(runningPositionX)
+
+	// runningPositionY := gui.NewLabel("")
+	// runningPositionY.SetPosition(10, 90)
+	// runningPositionY.SetColor(&math32.Color{R: 1.0, G: 1.0, B: 1.0})
+	// system.Add(runningPositionY)
+
+	runningPositionT := gui.NewLabel("")
+	runningPositionT.SetPosition(10, 70)
+	runningPositionT.SetColor(&math32.Color{R: 1.0, G: 1.0, B: 1.0})
+	system.Add(runningPositionT)
 
 	a.Run(func(renderer *renderer.Renderer, deltaTime time.Duration) {
 		a.Gls().Clear(gls.DEPTH_BUFFER_BIT | gls.STENCIL_BUFFER_BIT | gls.COLOR_BUFFER_BIT)
@@ -159,6 +169,22 @@ func main() {
 
 		renderer.Render(system, cam)
 
-		runningPosition.SetText(fmt.Sprint(earthDistance.Rotation().Y))
+		t := float32(0.0)
+		rx := earthDistance.Rotation().X
+		ry := earthDistance.Rotation().Y
+		if ry <= 0 && rx == 0 {
+			t = (-1 * ry) * (15768000 / math32.Pi)
+		} else if ry <= 0 && (rx < 0 || rx > 0) {
+			t = (math32.Pi + ry) * (15768000 / math32.Pi)
+		} else if ry >= 0 && rx < 0 {
+			t = (math32.Pi + ry) * (15768000 / math32.Pi)
+		} else if ry >= 0 && rx == 0 {
+			t = (2*math32.Pi - ry) * (15768000 / math32.Pi)
+		}
+
+		// runningPositionX.SetText(fmt.Sprintf("%1.4f", rx))
+		// runningPositionY.SetText(fmt.Sprintf("%1.4f", ry))
+		runningPositionT.SetText(fmt.Sprint(time.Unix(int64(t), 0)))
+
 	})
 }
