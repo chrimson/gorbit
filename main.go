@@ -23,6 +23,8 @@ import (
 func main() {
 	a := app.App()
 	system := core.NewNode()
+	earth := core.NewNode()
+	moon := core.NewNode()
 	gui.Manager().Set(system)
 
 	cam := camera.New(1)
@@ -93,7 +95,6 @@ func main() {
 	earthDistance.Add(moon)
 	earthDistance.Add(earthTilt)
 	earthDistance.TranslateX(10.0)
-	earth := core.NewNode()
 	earth.Add(earthDistance)
 	system.Add(earth)
 	earthPathCircle := geometry.NewGeometry()
@@ -140,7 +141,6 @@ func main() {
 	moonPlane.Add(moonDistance)
 	moonPlane.Add(moonPath)
 	moonPlane.RotateZ(5.14 * math32.Pi / 180)
-	moon := core.NewNode()
 	moon.Add(moonPlane)
 
 	runningPosition := gui.NewLabel("")
