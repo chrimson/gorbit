@@ -14,7 +14,6 @@ import (
 	"github.com/g3n/engine/texture"
 	"github.com/g3n/engine/window"
 
-	"github.com/g3n/engine/light"
 	"github.com/g3n/engine/material"
 	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/renderer"
@@ -40,7 +39,6 @@ func main() {
 	a := app.App()
 	system := core.NewNode()
 	earth := core.NewNode()
-	moon := core.NewNode()
 	gui.Manager().Set(system)
 
 	cam := camera.New(1)
@@ -49,15 +47,7 @@ func main() {
 	camera.NewOrbitControl(cam)
 	system.Add(cam)
 
-	sunShape := geometry.NewSphere(2, 360, 360)
-	sunTexture := material.NewStandard(&math32.Color{R: 1.0, G: 0.8, B: 0.5})
-	sunTexture.SetEmissiveColor(&math32.Color{R: 1.0, G: 0.8, B: 0.5})
-	sunLight := light.NewPoint(&math32.Color{R: 1, G: 1, B: 1}, 40.0)
-	sunLight.SetPosition(0.0, 0.0, 0.0)
-	sun := graphic.NewMesh(sunShape, sunTexture)
-	sun.Add(light.NewAmbient(&math32.Color{R: 1.0, G: 1.0, B: 1.0}, 0.2))
-	sun.Add(sunLight)
-	system.Add(sun)
+	system.Add(createSun())
 
 	earthShape := geometry.NewSphere(0.5, 360, 360)
 	earthImage := func(path string) *texture.Texture2D {
@@ -82,6 +72,8 @@ func main() {
 	earthAxis := graphic.NewLines(earthAxisGeometry, earthAxisMaterial)
 	earthTilt.Add(earthAxis)
 
+	moon := createMoon()
+
 	earthDistance := core.NewNode()
 	earthDistance.Add(moon)
 	earthDistance.Add(earthTilt)
@@ -102,37 +94,6 @@ func main() {
 	earthPathMaterial := material.NewStandard(&math32.Color{R: 1.0, G: 1.0, B: 1.0})
 	earthPath := graphic.NewLineStrip(earthPathCircle, earthPathMaterial)
 	system.Add(earthPath)
-
-	moonShape := geometry.NewSphere(0.15, 360, 360)
-	moonImage := func(path string) *texture.Texture2D {
-		t, _ := texture.NewTexture2DFromImage(path)
-		t.SetFlipY(false)
-		return t
-	}
-	moonTexture := material.NewStandard(&math32.Color{R: 1.0, G: 1.0, B: 1.0})
-	moonTexture.SetShininess(5)
-	moonTexture.AddTexture(moonImage("moon.jpg"))
-	moonDistance := graphic.NewMesh(moonShape, moonTexture)
-	moonDistance.TranslateX(1.5)
-
-	moonPathCircle := geometry.NewGeometry()
-	moonPathPoints := math32.NewArrayF32(0, 0)
-	for x := float32(-1.0); x < 1.0; x = x + 0.01 {
-		z := math32.Sqrt(1.0 - math32.Pow(x, 2))
-		moonPathPoints.Append(1.5*x, 0.0, 1.5*z)
-	}
-	for x := float32(1.0); x > -1.0; x = x - 0.01 {
-		z := math32.Sqrt(1.0 - math32.Pow(x, 2))
-		moonPathPoints.Append(1.5*x, 0.0, -1.5*z)
-	}
-	moonPathCircle.AddVBO(gls.NewVBO(moonPathPoints).AddAttrib(gls.VertexPosition))
-	moonPathMaterial := material.NewStandard(&math32.Color{R: 1.0, G: 1.0, B: 1.0})
-	moonPath := graphic.NewLineStrip(moonPathCircle, moonPathMaterial)
-	moonPlane := core.NewNode()
-	moonPlane.Add(moonDistance)
-	moonPlane.Add(moonPath)
-	moonPlane.RotateZ(5.14 * math32.Pi / 180)
-	moon.Add(moonPlane)
 
 	onResize := func(evname string, ev interface{}) {
 		width, height := a.GetSize()
@@ -176,7 +137,7 @@ func main() {
 		earth.RotateY(delta)
 		earthDistance.RotateY(-delta)
 		earthTilt.RotateY(delta * 365.2564)
-		moonPlane.RotateY(delta * 365.2564 / 27.3)
+		moon.RotateY(delta * 365.2564 / 27.3)
 
 		renderer.Render(system, cam)
 
