@@ -20,6 +20,22 @@ import (
 	"github.com/g3n/engine/renderer"
 )
 
+func revToSeconds(rx, ry float32) float32 {
+	t := float32(0.0)
+
+	if ry <= 0 && rx == 0 {
+		t = (-1 * ry) * (15779076.48 / math32.Pi)
+	} else if ry <= 0 && (rx < 0 || rx > 0) {
+		t = (math32.Pi + ry) * (15779076.48 / math32.Pi)
+	} else if ry >= 0 && rx < 0 {
+		t = (math32.Pi + ry) * (15779076.48 / math32.Pi)
+	} else if ry >= 0 && rx == 0 {
+		t = (2*math32.Pi - ry) * (15779076.48 / math32.Pi)
+	}
+
+	return t
+}
+
 func main() {
 	a := app.App()
 	system := core.NewNode()
@@ -32,31 +48,6 @@ func main() {
 	cam.LookAt(&math32.Vector3{X: 0.0, Y: 0.0, Z: 0.0}, &math32.Vector3{X: 0.0, Y: 10.0, Z: 10.0})
 	camera.NewOrbitControl(cam)
 	system.Add(cam)
-
-	onResize := func(evname string, ev interface{}) {
-		width, height := a.GetSize()
-		a.Gls().Viewport(0, 0, int32(width), int32(height))
-		cam.SetAspect(float32(width) / float32(height))
-	}
-	a.Subscribe(window.OnWindowSize, onResize)
-	onResize("", nil)
-
-	dateTimeControl := gui.NewHScrollBar(700, 20)
-	dateTimeControl.SetPosition(10, 10)
-	test := gui.NewLabel("Pos:")
-	test.SetPosition(dateTimeControl.Position().X+dateTimeControl.Width()+10, dateTimeControl.Position().Y)
-	dateTimeControl.Subscribe(gui.OnChange, func(evname string, ev interface{}) {
-		test.SetText(fmt.Sprintf("Pos: %1.2f", dateTimeControl.Value()))
-	})
-	dateTimeControl.SetColor(&math32.Color{R: 0.2, G: 0.2, B: 0.2})
-	system.Add(dateTimeControl)
-	system.Add(test)
-
-	speedControl := gui.NewHSlider(700, 20)
-	speedControl.SetPosition(10, 40)
-	speedControl.SetValue(0.01)
-	speedControl.Subscribe(gui.OnChange, func(evname string, ev interface{}) {})
-	system.Add(speedControl)
 
 	sunShape := geometry.NewSphere(2, 360, 360)
 	sunTexture := material.NewStandard(&math32.Color{R: 1.0, G: 0.8, B: 0.5})
@@ -143,48 +134,63 @@ func main() {
 	moonPlane.RotateZ(5.14 * math32.Pi / 180)
 	moon.Add(moonPlane)
 
-	// runningPositionX := gui.NewLabel("")
-	// runningPositionX.SetPosition(10, 70)
-	// runningPositionX.SetColor(&math32.Color{R: 1.0, G: 1.0, B: 1.0})
-	// system.Add(runningPositionX)
+	onResize := func(evname string, ev interface{}) {
+		width, height := a.GetSize()
+		a.Gls().Viewport(0, 0, int32(width), int32(height))
+		cam.SetAspect(float32(width) / float32(height))
+	}
+	a.Subscribe(window.OnWindowSize, onResize)
+	onResize("", nil)
 
-	// runningPositionY := gui.NewLabel("")
-	// runningPositionY.SetPosition(10, 90)
-	// runningPositionY.SetColor(&math32.Color{R: 1.0, G: 1.0, B: 1.0})
-	// system.Add(runningPositionY)
+	speedControl := gui.NewHScrollBar(780, 20)
+	speedControl.SetColor(&math32.Color{R: 0.2, G: 0.2, B: 0.2})
+	speedControl.SetPosition(10, 10)
+	speedControl.SetValue(0.50)
+	speedControl.Subscribe(gui.OnChange, func(evname string, ev interface{}) {})
+	system.Add(speedControl)
 
 	runningPositionT := gui.NewLabel("")
-	runningPositionT.SetPosition(10, 70)
+	runningPositionT.SetPosition(10, 40)
 	runningPositionT.SetColor(&math32.Color{R: 1.0, G: 1.0, B: 1.0})
 	system.Add(runningPositionT)
 
+	runningPositionY := gui.NewLabel("")
+	runningPositionY.SetPosition(10, 100)
+	runningPositionY.SetColor(&math32.Color{R: 1.0, G: 1.0, B: 1.0})
+	system.Add(runningPositionY)
+
+	y := float32(0.0)
 	a.Run(func(renderer *renderer.Renderer, deltaTime time.Duration) {
 		a.Gls().Clear(gls.DEPTH_BUFFER_BIT | gls.STENCIL_BUFFER_BIT | gls.COLOR_BUFFER_BIT)
 
-		delta := 100 * speedControl.Value() * float32(deltaTime.Seconds()) * 2 * math32.Pi / 365.0
+		speed := 0.0
+		if speedControl.Value() < 0.475 {
+			speed = speedControl.Value() - 0.475
+		} else if speedControl.Value() > 0.525 {
+			speed = speedControl.Value() - 0.525
+		}
+		delta := float32(speed) * float32(deltaTime.Seconds())
+
+		ti := revToSeconds(earthDistance.Rotation().X, earthDistance.Rotation().Y)
+
 		earth.RotateY(delta)
 		earthDistance.RotateY(-delta)
-		earthTilt.RotateY(delta * 365.0)
-		moonPlane.RotateY(delta * 365.0 / 27.3)
+		earthTilt.RotateY(delta * 365.2564)
+		moonPlane.RotateY(delta * 365.2564 / 27.3)
 
 		renderer.Render(system, cam)
 
-		t := float32(0.0)
-		rx := earthDistance.Rotation().X
-		ry := earthDistance.Rotation().Y
-		if ry <= 0 && rx == 0 {
-			t = (-1 * ry) * (15768000 / math32.Pi)
-		} else if ry <= 0 && (rx < 0 || rx > 0) {
-			t = (math32.Pi + ry) * (15768000 / math32.Pi)
-		} else if ry >= 0 && rx < 0 {
-			t = (math32.Pi + ry) * (15768000 / math32.Pi)
-		} else if ry >= 0 && rx == 0 {
-			t = (2*math32.Pi - ry) * (15768000 / math32.Pi)
+		t := revToSeconds(earthDistance.Rotation().X, earthDistance.Rotation().Y)
+
+		d := float32(0.0)
+		if ti > 23668614 && t < 7889538 {
+			y += 31558152.96
+		} else if ti < 7889538 && t > 23668614 {
+			y -= 31558152.96
+		} else {
+			d = t + y
 		}
 
-		// runningPositionX.SetText(fmt.Sprintf("%1.4f", rx))
-		// runningPositionY.SetText(fmt.Sprintf("%1.4f", ry))
-		runningPositionT.SetText(fmt.Sprint(time.Unix(int64(t), 0)))
-
+		runningPositionT.SetText(fmt.Sprint(time.Unix(int64(d), 0)))
 	})
 }
