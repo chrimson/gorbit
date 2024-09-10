@@ -7,14 +7,10 @@ import (
 	"github.com/g3n/engine/app"
 	"github.com/g3n/engine/camera"
 	"github.com/g3n/engine/core"
-	"github.com/g3n/engine/geometry"
 	"github.com/g3n/engine/gls"
-	"github.com/g3n/engine/graphic"
 	"github.com/g3n/engine/gui"
-	"github.com/g3n/engine/texture"
 	"github.com/g3n/engine/window"
 
-	"github.com/g3n/engine/material"
 	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/renderer"
 )
@@ -36,9 +32,8 @@ func revToSeconds(rx, ry float32) float32 {
 }
 
 func main() {
-	a := app.App()
+	app := app.App()
 	system := core.NewNode()
-	earth := core.NewNode()
 	gui.Manager().Set(system)
 
 	cam := camera.New(1)
@@ -47,111 +42,65 @@ func main() {
 	camera.NewOrbitControl(cam)
 	system.Add(cam)
 
-	system.Add(createSun())
-
-	earthShape := geometry.NewSphere(0.5, 360, 360)
-	earthImage := func(path string) *texture.Texture2D {
-		t, _ := texture.NewTexture2DFromImage(path)
-		t.SetFlipY(false)
-		return t
-	}
-	earthTexture := material.NewStandard(&math32.Color{R: 1.0, G: 1.0, B: 1.0})
-	earthTexture.SetShininess(5)
-	earthTexture.AddTexture(earthImage("earth.jpg"))
-	earthTilt := graphic.NewMesh(earthShape, earthTexture)
-	earthTilt.RotateZ(23.4 * math32.Pi / 180)
-
-	earthAxisGeometry := geometry.NewGeometry()
-	earthAxisVertices := math32.NewArrayF32(0, 0)
-	earthAxisVertices.Append(
-		0.0, 1.0, 0.0,
-		0.0, -1.0, 0.0,
-	)
-	earthAxisGeometry.AddVBO(gls.NewVBO(earthAxisVertices).AddAttrib(gls.VertexPosition))
-	earthAxisMaterial := material.NewStandard(&math32.Color{R: 1.0, G: 1.0, B: 1.0})
-	earthAxis := graphic.NewLines(earthAxisGeometry, earthAxisMaterial)
-	earthTilt.Add(earthAxis)
-
-	moon := createMoon()
-
-	earthDistance := core.NewNode()
-	earthDistance.Add(moon)
-	earthDistance.Add(earthTilt)
-	earthDistance.TranslateX(10.0)
-	earth.Add(earthDistance)
-	system.Add(earth)
-	earthPathCircle := geometry.NewGeometry()
-	earthPathPoints := math32.NewArrayF32(0, 0)
-	for x := float32(-1.0); x < 1.0; x = x + 0.01 {
-		z := math32.Sqrt(1.0 - math32.Pow(x, 2))
-		earthPathPoints.Append(10.0*x, 0.0, 10.0*z)
-	}
-	for x := float32(1.0); x > -1.0; x = x - 0.01 {
-		z := math32.Sqrt(1.0 - math32.Pow(x, 2))
-		earthPathPoints.Append(10.0*x, 0.0, -10.0*z)
-	}
-	earthPathCircle.AddVBO(gls.NewVBO(earthPathPoints).AddAttrib(gls.VertexPosition))
-	earthPathMaterial := material.NewStandard(&math32.Color{R: 1.0, G: 1.0, B: 1.0})
-	earthPath := graphic.NewLineStrip(earthPathCircle, earthPathMaterial)
-	system.Add(earthPath)
+	system.Add(newSun())
+	earth := newEarth()
+	system.Add(earth.planet)
+	system.Add(earth.path)
 
 	onResize := func(evname string, ev interface{}) {
-		width, height := a.GetSize()
-		a.Gls().Viewport(0, 0, int32(width), int32(height))
+		width, height := app.GetSize()
+		app.Gls().Viewport(0, 0, int32(width), int32(height))
 		cam.SetAspect(float32(width) / float32(height))
 	}
-	a.Subscribe(window.OnWindowSize, onResize)
+	app.Subscribe(window.OnWindowSize, onResize)
 	onResize("", nil)
 
-	speedControl := gui.NewHScrollBar(780, 20)
-	speedControl.SetColor(&math32.Color{R: 0.2, G: 0.2, B: 0.2})
-	speedControl.SetPosition(10, 10)
-	speedControl.SetValue(0.50)
-	speedControl.Subscribe(gui.OnChange, func(evname string, ev interface{}) {})
-	system.Add(speedControl)
+	control := gui.NewHScrollBar(780, 20)
+	control.SetColor(&math32.Color{R: 0.2, G: 0.2, B: 0.2})
+	control.SetPosition(10, 10)
+	control.SetValue(0.50)
+	control.Subscribe(gui.OnChange, func(evname string, ev interface{}) {})
+	system.Add(control)
 
-	runningPositionT := gui.NewLabel("")
-	runningPositionT.SetPosition(10, 40)
-	runningPositionT.SetColor(&math32.Color{R: 1.0, G: 1.0, B: 1.0})
-	system.Add(runningPositionT)
+	dateTimeDisplay := gui.NewLabel("")
+	dateTimeDisplay.SetPosition(10, 40)
+	dateTimeDisplay.SetColor(&math32.Color{R: 1.0, G: 1.0, B: 1.0})
+	system.Add(dateTimeDisplay)
 
-	runningPositionY := gui.NewLabel("")
-	runningPositionY.SetPosition(10, 100)
-	runningPositionY.SetColor(&math32.Color{R: 1.0, G: 1.0, B: 1.0})
-	system.Add(runningPositionY)
-
-	y := float32(0.0)
-	a.Run(func(renderer *renderer.Renderer, deltaTime time.Duration) {
-		a.Gls().Clear(gls.DEPTH_BUFFER_BIT | gls.STENCIL_BUFFER_BIT | gls.COLOR_BUFFER_BIT)
+	year := float32(0.0)
+	app.Run(func(renderer *renderer.Renderer, deltaTime time.Duration) {
+		app.Gls().Clear(gls.DEPTH_BUFFER_BIT | gls.STENCIL_BUFFER_BIT | gls.COLOR_BUFFER_BIT)
 
 		speed := 0.0
-		if speedControl.Value() < 0.475 {
-			speed = speedControl.Value() - 0.475
-		} else if speedControl.Value() > 0.525 {
-			speed = speedControl.Value() - 0.525
+		if control.Value() < 0.475 {
+			speed = control.Value() - 0.475
+		} else if control.Value() > 0.525 {
+			speed = control.Value() - 0.525
 		}
 		delta := float32(speed) * float32(deltaTime.Seconds())
 
-		ti := revToSeconds(earthDistance.Rotation().X, earthDistance.Rotation().Y)
+		timeInit := revToSeconds(earth.distance.Rotation().X,
+			earth.distance.Rotation().Y)
 
-		earth.RotateY(delta)
-		earthDistance.RotateY(-delta)
-		earthTilt.RotateY(delta * 365.2564)
-		moon.RotateY(delta * 365.2564 / 27.3)
+		earth.planet.RotateY(delta)
+		earth.distance.RotateY(-delta)
+		earth.tilt.RotateY(delta * 365.2564)
+		earth.moon.RotateY(delta * 365.2564 / 27.3)
 
 		renderer.Render(system, cam)
 
-		t := revToSeconds(earthDistance.Rotation().X, earthDistance.Rotation().Y)
+		timeNew := revToSeconds(earth.distance.Rotation().X,
+			earth.distance.Rotation().Y)
 
-		d := float32(0.0)
-		if ti > 23668614 && t < 7889538 {
-			y += 31558152.96
-		} else if ti < 7889538 && t > 23668614 {
-			y -= 31558152.96
+		dateTime := float32(0.0)
+		if timeInit > 23668614 && timeNew < 7889538 {
+			year += 31558152.96
+		} else if timeInit < 7889538 && timeNew > 23668614 {
+			year -= 31558152.96
 		} else {
-			d = t + y
+			dateTime = timeNew + year
 		}
 
-		runningPositionT.SetText(fmt.Sprint(time.Unix(int64(d), 0)))
+		dateTimeDisplay.SetText(fmt.Sprint(time.Unix(int64(dateTime), 0)))
 	})
 }
