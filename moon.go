@@ -39,7 +39,7 @@ func newMoon() *core.Node {
 	moon := core.NewNode()
 	moon.Add(distance)
 	moon.Add(path)
-	moon.RotateZ(5.14 * math32.Pi / 180)
+	moon.RotateZ(LUNAR_PLANE_DEGREES * math32.Pi / 180)
 
 	return moon
 }

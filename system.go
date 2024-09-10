@@ -15,20 +15,29 @@ import (
 	"github.com/g3n/engine/renderer"
 )
 
-func revToSeconds(rx, ry float32) float32 {
-	t := float32(0.0)
+const Q1_SECONDS = 7889538.24
+const Q2_SECONDS = 15779076.48
+const Q3_SECONDS = 23668614.72
+const YEAR_SECONDS = 31558152.96
+const REVOLUTION_DAYS = 365.2564
+const LUNAR_DAYS = 27.3
+const LUNAR_PLANE_DEGREES = 5.14
+const EARTH_TILT_DEGREES = 23.4
 
-	if ry <= 0 && rx == 0 {
-		t = (-1 * ry) * (15779076.48 / math32.Pi)
-	} else if ry <= 0 && (rx < 0 || rx > 0) {
-		t = (math32.Pi + ry) * (15779076.48 / math32.Pi)
-	} else if ry >= 0 && rx < 0 {
-		t = (math32.Pi + ry) * (15779076.48 / math32.Pi)
-	} else if ry >= 0 && rx == 0 {
-		t = (2*math32.Pi - ry) * (15779076.48 / math32.Pi)
+func revToSeconds(rotationX, rotationY float32) float32 {
+	time := float32(0.0)
+
+	if rotationY <= 0 && rotationX == 0 {
+		time = (-1 * rotationY) * (Q2_SECONDS / math32.Pi)
+	} else if rotationY <= 0 && (rotationX < 0 || rotationX > 0) {
+		time = (math32.Pi + rotationY) * (Q2_SECONDS / math32.Pi)
+	} else if rotationY >= 0 && rotationX < 0 {
+		time = (math32.Pi + rotationY) * (Q2_SECONDS / math32.Pi)
+	} else if rotationY >= 0 && rotationX == 0 {
+		time = (2*math32.Pi - rotationY) * (Q2_SECONDS / math32.Pi)
 	}
 
-	return t
+	return time
 }
 
 func main() {
@@ -84,8 +93,8 @@ func main() {
 
 		earth.planet.RotateY(delta)
 		earth.distance.RotateY(-delta)
-		earth.tilt.RotateY(delta * 365.2564)
-		earth.moon.RotateY(delta * 365.2564 / 27.3)
+		earth.tilt.RotateY(delta * REVOLUTION_DAYS)
+		earth.moon.RotateY(delta * REVOLUTION_DAYS / LUNAR_DAYS)
 
 		renderer.Render(system, cam)
 
@@ -93,10 +102,10 @@ func main() {
 			earth.distance.Rotation().Y)
 
 		dateTime := float32(0.0)
-		if timeInit > 23668614 && timeNew < 7889538 {
-			year += 31558152.96
-		} else if timeInit < 7889538 && timeNew > 23668614 {
-			year -= 31558152.96
+		if timeInit > Q3_SECONDS && timeNew < Q1_SECONDS {
+			year += YEAR_SECONDS
+		} else if timeInit < Q1_SECONDS && timeNew > Q3_SECONDS {
+			year -= YEAR_SECONDS
 		} else {
 			dateTime = timeNew + year
 		}

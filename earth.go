@@ -31,7 +31,7 @@ func newEarth() Earth {
 	texture.SetShininess(5)
 	texture.AddTexture(image("earth.jpg"))
 	tilt := graphic.NewMesh(shape, texture)
-	tilt.RotateZ(23.4 * math32.Pi / 180)
+	tilt.RotateZ(EARTH_TILT_DEGREES * math32.Pi / 180)
 
 	axisGeometry := geometry.NewGeometry()
 	axisVertices := math32.NewArrayF32(0, 0)
