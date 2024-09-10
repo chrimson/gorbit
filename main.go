@@ -45,7 +45,7 @@ func revToSeconds(rotationX, rotationY float32) float32 {
 }
 
 func main() {
-	app := app.App()
+	app := app.App(1600, 800, "Gorbit")
 	system := core.NewNode()
 	gui.Manager().Set(system)
 
@@ -68,7 +68,7 @@ func main() {
 	app.Subscribe(window.OnWindowSize, onResize)
 	onResize("", nil)
 
-	control := gui.NewHScrollBar(780, 20)
+	control := gui.NewHScrollBar(1580, 20)
 	control.SetColor(&math32.Color{R: 0.2, G: 0.2, B: 0.2})
 	control.SetPosition(10, 10)
 	control.SetValue(0.50)
@@ -100,7 +100,7 @@ func main() {
 		earth.tilt.RotateY(delta * REVOLUTION_DAYS)
 		earth.moon.RotateY(delta * REVOLUTION_DAYS / LUNAR_DAYS)
 
-		renderer.Render(system, cam)
+		app.Renderer().Render(system, cam)
 
 		timeNew := revToSeconds(earth.distance.Rotation().X,
 			earth.distance.Rotation().Y)
