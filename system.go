@@ -25,16 +25,20 @@ const LUNAR_PLANE_DEGREES = 5.14
 const EARTH_TILT_DEGREES = 23.4
 
 func revToSeconds(rotationX, rotationY float32) float32 {
-	time := float32(0.0)
+	time := float32(Q2_SECONDS) / math32.Pi
 
-	if rotationY <= 0 && rotationX == 0 {
-		time = (-1 * rotationY) * (Q2_SECONDS / math32.Pi)
-	} else if rotationY <= 0 && (rotationX < 0 || rotationX > 0) {
-		time = (math32.Pi + rotationY) * (Q2_SECONDS / math32.Pi)
-	} else if rotationY >= 0 && rotationX < 0 {
-		time = (math32.Pi + rotationY) * (Q2_SECONDS / math32.Pi)
-	} else if rotationY >= 0 && rotationX == 0 {
-		time = (2*math32.Pi - rotationY) * (Q2_SECONDS / math32.Pi)
+	if rotationY <= 0 {
+		if rotationX == 0 {
+			time *= -1 * rotationY
+		} else {
+			time *= math32.Pi + rotationY
+		}
+	} else {
+		if rotationX == 0 {
+			time *= 2*math32.Pi - rotationY
+		} else {
+			time *= math32.Pi + rotationY
+		}
 	}
 
 	return time
@@ -110,6 +114,6 @@ func main() {
 			dateTime = timeNew + year
 		}
 
-		dateTimeDisplay.SetText(fmt.Sprint(time.Unix(int64(dateTime), 0)))
+		dateTimeDisplay.SetText(fmt.Sprint(time.Unix(int64(dateTime), 0).UTC()))
 	})
 }
