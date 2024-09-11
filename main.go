@@ -23,6 +23,7 @@ const REVOLUTION_DAYS = 365.2564
 const LUNAR_DAYS = 27.3
 const LUNAR_PLANE_DEGREES = 5.14
 const EARTH_TILT_DEGREES = 23.4
+const SUMMER_SOLSTICE_OFFSET = 1718841600.0 // 2024-06-20
 
 func revToSeconds(rotationX, rotationY float32) (time, realY float32) {
 	factor := float32(0.0)
@@ -140,7 +141,7 @@ func main() {
 		} else if timeInit < Q1_SECONDS && timeNew > Q3_SECONDS {
 			year -= YEAR_SECONDS
 		} else {
-			dateTime = timeNew + year
+			dateTime = timeNew + year + SUMMER_SOLSTICE_OFFSET
 		}
 
 		dateTimeDisplay.SetText(fmt.Sprint(time.Unix(int64(dateTime), 0).UTC()))
