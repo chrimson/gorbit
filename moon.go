@@ -20,7 +20,10 @@ func newMoon() *core.Node {
 	texture := material.NewStandard(&math32.Color{R: 1.0, G: 1.0, B: 1.0})
 	texture.SetShininess(5)
 	texture.AddTexture(image("moon.jpg"))
-	distance := graphic.NewMesh(shape, texture)
+	side := graphic.NewMesh(shape, texture)
+	side.SetRotationY(math32.Pi)
+	distance := core.NewNode()
+	distance.Add(side)
 	distance.TranslateX(1.5)
 
 	pathCircle := geometry.NewGeometry()
