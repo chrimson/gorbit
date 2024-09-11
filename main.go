@@ -25,25 +25,24 @@ const LUNAR_PLANE_DEGREES = 5.14
 const EARTH_TILT_DEGREES = 23.4
 
 func revToSeconds(rotationX, rotationY float32) (time, realY float32) {
-	time = float32(Q2_SECONDS) / math32.Pi
+	factor := float32(0.0)
 
 	if rotationY <= 0 {
 		if rotationX == 0 {
-			time *= -rotationY
-			realY = rotationY
+			factor = -rotationY
 		} else {
-			time *= math32.Pi + rotationY
-			realY = -(math32.Pi + rotationY)
+			factor = math32.Pi + rotationY
 		}
 	} else {
 		if rotationX == 0 {
-			time *= 2*math32.Pi - rotationY
-			realY = -(2*math32.Pi - rotationY)
+			factor = 2*math32.Pi - rotationY
 		} else {
-			time *= math32.Pi + rotationY
-			realY = -(math32.Pi + rotationY)
+			factor = math32.Pi + rotationY
 		}
 	}
+
+	time = factor * float32(Q2_SECONDS) / math32.Pi
+	realY = -factor
 
 	return time, realY
 }
