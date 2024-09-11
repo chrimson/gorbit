@@ -24,24 +24,28 @@ const LUNAR_DAYS = 27.3
 const LUNAR_PLANE_DEGREES = 5.14
 const EARTH_TILT_DEGREES = 23.4
 
-func revToSeconds(rotationX, rotationY float32) float32 {
-	time := float32(Q2_SECONDS) / math32.Pi
+func revToSeconds(rotationX, rotationY float32) (time, realY float32) {
+	time = float32(Q2_SECONDS) / math32.Pi
 
 	if rotationY <= 0 {
 		if rotationX == 0 {
-			time *= -1 * rotationY
+			time *= -rotationY
+			realY = rotationY
 		} else {
 			time *= math32.Pi + rotationY
+			realY = -(math32.Pi + rotationY)
 		}
 	} else {
 		if rotationX == 0 {
 			time *= 2*math32.Pi - rotationY
+			realY = -(2*math32.Pi - rotationY)
 		} else {
 			time *= math32.Pi + rotationY
+			realY = -(math32.Pi + rotationY)
 		}
 	}
 
-	return time
+	return time, realY
 }
 
 func main() {
@@ -50,14 +54,14 @@ func main() {
 	gui.Manager().Set(system)
 
 	cam := camera.New(1)
-	cam.SetPosition(0, 7, 15)
-	cam.LookAt(&math32.Vector3{X: 0.0, Y: 0.0, Z: 0.0}, &math32.Vector3{X: 0.0, Y: 10.0, Z: 10.0})
-	camera.NewOrbitControl(cam)
+	cam.SetPosition(0.0, 7.0, 15.0)
+	cam.LookAt(&math32.Vector3{X: 0.0, Y: 0.0, Z: 0.0}, &math32.Vector3{X: 0.0, Y: 1.0, Z: 0.0})
+	c := camera.NewOrbitControl(cam)
 	system.Add(cam)
 
 	system.Add(newSun())
 	earth := newEarth()
-	system.Add(earth.planet)
+	system.Add(earth.body)
 	system.Add(earth.path)
 
 	onResize := func(evname string, ev interface{}) {
@@ -67,6 +71,24 @@ func main() {
 	}
 	app.Subscribe(window.OnWindowSize, onResize)
 	onResize("", nil)
+
+	radioSun := gui.NewRadioButton("Sun")
+	radioSun.SetPosition(10, 60)
+	radioSun.SetGroup("center_body")
+	radioSun.Subscribe(gui.OnChange, func(name string, ev interface{}) {
+		if radioSun.Value() {
+			cam.LookAt(&math32.Vector3{X: 0.0, Y: 0.0, Z: 0.0}, &math32.Vector3{X: 0.0, Y: 1.0, Z: 0.0})
+			c.SetTarget(math32.Vector3{X: 0.0, Y: 0.0, Z: 0.0})
+		}
+	})
+	system.Add(radioSun)
+
+	radioEarth := gui.NewRadioButton("Earth")
+	radioEarth.SetPosition(80, 60)
+	radioEarth.SetGroup("center_body")
+	radioEarth.Subscribe(gui.OnChange, func(name string, ev interface{}) {
+	})
+	system.Add(radioEarth)
 
 	control := gui.NewHScrollBar(1580, 20)
 	control.SetColor(&math32.Color{R: 0.2, G: 0.2, B: 0.2})
@@ -92,18 +114,26 @@ func main() {
 		}
 		delta := float32(speed) * float32(deltaTime.Seconds())
 
-		timeInit := revToSeconds(earth.distance.Rotation().X,
-			earth.distance.Rotation().Y)
+		timeInit, realY := revToSeconds(earth.distance.Rotation().X, earth.distance.Rotation().Y)
 
-		earth.planet.RotateY(delta)
+		earth.body.RotateY(delta)
 		earth.distance.RotateY(-delta)
 		earth.tilt.RotateY(delta * REVOLUTION_DAYS)
 		earth.moon.RotateY(delta * REVOLUTION_DAYS / LUNAR_DAYS)
 
+		if radioEarth.Value() {
+			cam.LookAt(&math32.Vector3{X: 10 * math32.Cos(realY),
+				Y: 0.0,
+				Z: 10 * math32.Sin(realY)},
+				&math32.Vector3{X: 0.0, Y: 1.0, Z: 0.0})
+			c.SetTarget(math32.Vector3{X: 10 * math32.Cos(realY),
+				Y: 0.0,
+				Z: 10 * math32.Sin(realY)})
+		}
+
 		app.Renderer().Render(system, cam)
 
-		timeNew := revToSeconds(earth.distance.Rotation().X,
-			earth.distance.Rotation().Y)
+		timeNew, _ := revToSeconds(earth.distance.Rotation().X, earth.distance.Rotation().Y)
 
 		dateTime := float32(0.0)
 		if timeInit > Q3_SECONDS && timeNew < Q1_SECONDS {

@@ -11,7 +11,7 @@ import (
 )
 
 type Earth struct {
-	planet   *core.Node
+	body     *core.Node
 	distance *core.Node
 	path     *graphic.LineStrip
 	tilt     *graphic.Mesh
@@ -51,8 +51,8 @@ func newEarth() Earth {
 	distance.Add(tilt)
 	distance.TranslateX(10.0)
 
-	planet := core.NewNode()
-	planet.Add(distance)
+	body := core.NewNode()
+	body.Add(distance)
 
 	pathCircle := geometry.NewGeometry()
 	pathPoints := math32.NewArrayF32(0, 0)
@@ -68,7 +68,7 @@ func newEarth() Earth {
 	pathMaterial := material.NewStandard(&math32.Color{R: 1.0, G: 1.0, B: 1.0})
 	path := graphic.NewLineStrip(pathCircle, pathMaterial)
 
-	earth.planet = planet
+	earth.body = body
 	earth.distance = distance
 	earth.path = path
 	earth.tilt = tilt
