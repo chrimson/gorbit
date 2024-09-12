@@ -22,6 +22,7 @@ const YEAR_SECONDS = 31558152.96
 const REVOLUTION_DAYS = 365.2564
 const LUNAR_DAYS = 27.3
 const LUNAR_PLANE_DEGREES = 5.14
+const LUNAR_MERIDIAN = -77.0
 const EARTH_TILT_DEGREES = 23.4
 const SUMMER_SOLSTICE_OFFSET = 1718841600.0 // 2024-06-20
 
@@ -61,6 +62,7 @@ func main() {
 
 	system.Add(newSun())
 	earth := newEarth()
+	earth.moon.RotateY(LUNAR_MERIDIAN * math32.Pi / 180)
 	system.Add(earth.body)
 	system.Add(earth.path)
 
