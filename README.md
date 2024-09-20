@@ -3,6 +3,8 @@ My 6-year-old son wanted one of those toy Sun-Earth-Moon orbital models, but sho
 
 As my first foray into involved Go programming, one might notice my first attempt can be rather convoluted. In my defense, I was also learning astrophysics through Google. At least I got around to breaking up an even-more-unwieldy single main.go file into objects that were more meaningful. It uses the G3N ("gen") OpenGL 3D Game Engine for Go, which enabled my geometric design without needing to learn hardware system calls. Despite how tangled my code is, Go still manages to render graphical animation at an impressive speed
 
+![](gorbit00.jpg)
+
 ## Notes
 Intuition based on Northern Hemisphere, for the current year of 2024 at the time of this writing
 
